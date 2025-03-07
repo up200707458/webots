@@ -15,10 +15,10 @@ N.B.: no optional dependencies were tried to be included.
 * Clone the repository
 #+begin_src shell
 git clone --depth 1 'https://github.com/up200707458/webots.git'
+cd webots
+
 git submodule init
 git submodule update
-
-cd webots
 #+end_src
 
 * Install packaged dependencies
@@ -120,6 +120,7 @@ As can be consulted in the diff of the commit, just changed:
   dnf list --installed | grep jdk
   rpm -ql java-21-openjdk
   #+end_src
+
 - =WEBOTS_HOME=
   point to where you cloned it
 
@@ -135,9 +136,9 @@ The TLDR is minimum required libraries are:
   - OIS
   - ASSIMP
   - PICO
-  
+
 If the binaries fail to work or you don't trust them, remove them (=<webots_repo>/dependencies/*.tar.bz2=)
-and read [[*Details and manually creating surrogates from scratch][Details and manually creating surrogates from scratch]], else you can skip and move to [[*Build webots][Build webots]].
+and read =Details and manually creating surrogates from scratch=, else you can skip and move to =Build webots=.
 
 ** Details and manually creating surrogates from scratch
 Building =webots= means calling =make= on toplevel of repository which will dispatch to
@@ -185,8 +186,6 @@ aqt list-qt linux_arm64 desktop               # gives versions
 # Simulating what the script will run to peek at folder structure
 aqt install-qt --outputdir ~/Qt linux_arm64 desktop 6.7.0 linux_gcc_arm64 -m qtwebsockets
 #+end_src
-
-The scripts downloads =QT= into =~/Qt=, you can delete it after building since the script copies what it needs to webots home directory.
 
 Adaptations were made to the script since =arm64= version of QT changes =gcc_64= name to =gcc_arm64=.
 
