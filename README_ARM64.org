@@ -14,7 +14,10 @@ N.B.: no optional dependencies were tried to be included.
 
 * Clone the repository
 #+begin_src shell
-git clone --depth 1 'https://github.com/up200707458/webots.git'
+# no need for full history, save disk space
+# but also did some minor tweaks to text (not code except $WEBOT_HOME) after main commit
+# so cannot be depth 1 to be able to do git diff
+git clone --depth 10 'https://github.com/up200707458/webots.git'
 cd webots
 
 git submodule init
@@ -149,7 +152,10 @@ In the hopes of keeping the repository support for other architectures:
 - copies of files to be specialized for =arm64= was made:
   - =dependencies/Makefile.linux.arm64=
   - =scripts/install/qt_linux_installer.arm64.sh=
-- The dispatch was modded to call theses files, see the diff of the commit.
+- The dispatch was modded to call theses files, see the diff of the commits:
+  #+begin_src shell
+git diff 2124819a553234854fe8a46d283796e6e90492ce 56fb0e632c80640e520b20ab593116291d9b6a74
+  #+end_src
 
 From now on I'll refer only the =arm64= copies.
 
@@ -400,4 +406,3 @@ dnf repoquery -l bzip2-libs #  gives fedora's library location
 cd /usr/lib64/
 ln -s libbz2.so.1.0.8 libbz2.so.1.0
 #+end_src
-
