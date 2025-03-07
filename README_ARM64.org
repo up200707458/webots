@@ -1,0 +1,404 @@
+#+title: Compiling for arm64 Linux
+
+The problem with building from source in =arm64= is =webots= requires libraries which are not
+globally installed but downloaded @compile time and extracted into =webots= directory:
+- problem is on Linux it can only obtain =x86_64= binaries.
+
+Based on [[https://github.com/cyberbotics/webots/wiki/Linux-installation/]], contrast it with
+each step declared here.
+
+Successfully built on fedora 41 arm64 (Asahi Linux), installing on other distribution
+should only require changes to the {dependencies,package manager} names.
+
+N.B.: no optional dependencies were tried to be included.
+
+* Clone the repository
+#+begin_src shell
+git clone --depth 1 'https://github.com/up200707458/webots.git'
+git submodule init
+git submodule update
+
+cd webots
+#+end_src
+
+* Install packaged dependencies
+Listed on:
+- =scripts/install/linux_compilation_dependencies.sh= (which calls the runtime one)
+- =scripts/install/linux_compilation_dependencies.sh=
+- dependencies for the @compile time downloaded libraries, discovered mostly ad hoc.
+
+If running on =ubuntu= you might be able to run =scripts/install/linux_compilation_dependencies.sh=,
+for fedora 41 manual searching for the packages was done.
+Since the installation was not on a chainroot some package might have been missed while
+still working because it would have been already on the system.
+
+In case a later step fails you might cross check with:
+- [[https://github.com/cyberbotics/webots/pull/6780][Adding compilation support for Fedora 41]]
+
+** Dependency Packages
+- Place the following text in a file (=dependencies.txt=)
+- Remove the pseudo-comments (=# ...=) and blank lines
+  Some packages were commented out, I forgot the reason.
+
+#+begin_src text
+# QT direct install
+bzip2-libs
+
+# OIS
+libtool
+
+# Pico
+popt
+popt-devel
+
+## Compile dependencies
+swig
+glib-devel
+freeimage
+freetype-devel
+libxml2-devel
+boost-devel
+libgcrypt-devel
+libzip-devel
+readline-devel
+pbzip2
+openal-soft-devel
+
+
+## Runtime dependencies
+lsb_release
+#libavcodec-free
+#libavcodec-free-devel
+mesa-libGLU
+mesa-libGLU-devel
+mesa-libEGL
+mesa-libEGL-devel
+libxkbcommon
+libxkbcommon-devel
+xcb-util-keysyms
+xcb-util-keysyms-devel
+xcb-util-image
+xcb-util-image-devel
+
+# libxcb-icccm4
+xcb-util-wm
+xcb-util-wm-devel
+
+# libxcb-randr0
+libXrandr
+libXrandr-devel
+
+xcb-util-renderutil-devel
+xcb-util-renderutil
+
+libXinerama
+libXinerama-devel
+libXcomposite
+libXcomposite-devel
+libXtst
+libXtst-devel
+nss-devel
+nss-tools
+nss-util
+nss-util-devel
+xcb-util-cursor
+xcb-util-cursor-devel
+#+end_src
+
+Using fedora's package manager =dnf=:
+#+begin_src shell
+sudo dnf install $(cat dependencies)
+#+end_src
+
+* Set up =bash= environment variables
+Edit =scripts/install/bashrc.linux=.
+
+As can be consulted in the diff of the commit, just changed:
+- =JAVA_HOME=
+  not sure if it's required but on fedora that path can be discovered using
+  #+begin_src shell
+  dnf list --installed | grep jdk
+  rpm -ql java-21-openjdk
+  #+end_src
+- =WEBOTS_HOME=
+  point to where you cloned it
+
+#+begin_src shell
+source bashrc.linux
+#+end_src
+
+* Surrogates for @compile time dependencies
+The TLDR is minimum required libraries are:
+- downloaded automatically
+  - QT
+- Included binaries into the repository since they are small (~7MiB)
+  - OIS
+  - ASSIMP
+  - PICO
+  
+If the binaries fail to work or you don't trust them, remove them (=<webots_repo>/dependencies/*.tar.bz2=)
+and read [[*Details and manually creating surrogates from scratch][Details and manually creating surrogates from scratch]], else you can skip and move to [[*Build webots][Build webots]].
+
+** Details and manually creating surrogates from scratch
+Building =webots= means calling =make= on toplevel of repository which will dispatch to
+=dependencies/Makefile.linux= for these extra dependencies (which also dispatches to
+=scripts/install/qt_linux_installer.sh=).
+
+In the hopes of keeping the repository support for other architectures:
+- copies of files to be specialized for =arm64= was made:
+  - =dependencies/Makefile.linux.arm64=
+  - =scripts/install/qt_linux_installer.arm64.sh=
+- The dispatch was modded to call theses files, see the diff of the commit.
+
+From now on I'll refer only the =arm64= copies.
+
+The required libraries:
+- installed using a dedicated script =scripts/install/qt_linux_installer.arm64.sh=
+  which is modded to now automatically download the =arm64=
+  - [[https://github.com/cyberbotics/webots/wiki/Qt-compilation][QT]]
+- downloaded from [[https://cyberbotics.com/files/repository/dependencies/linux64/release ][cyberbotics.com]], so someone built them.
+  We will build these by hand so =dependencies/Makefile.linux.arm64= was modded to not download them.
+  - [[https://github.com/cyberbotics/webots/wiki/OIS-compilation][OIS]]
+  - [[https://github.com/cyberbotics/webots/wiki/Assimp-compilation][ASSIMP]]
+  - [[https://github.com/cyberbotics/webots/wiki/Pico-Compilation][PICO]]
+
+As the listing shows, there are webots wiki pages to build each of these but i have found
+them to be incomplete and/or misleading. Bringing them together with the file structure of
+the libraries the =Makefile.linux= downloads for =86_64=, the analogous packages for =arm64= are
+achieved.
+
+*** QT
+No manual action required, safely skip.
+
+- =scripts/install/qt_linux_installer.arm64.sh=
+  henceforth called the script.
+
+Wiki suggests using official QT installer which does have an =arm64= version.
+This requires an account for QT and is not how the script gets QT, it uses:
+- [[https://github.com/miurahr/aqtinstall][aqt: Another (unofficial) Qt CLI Installer on multi-platforms]]
+
+The =QT_VERSION= webots uses is =6.5.3= but the minimum version for =arm64= found with =aqt= is
+=6.7.0= which was chosen. This was found using:
+#+begin_src shell
+aqt list-qt linux_arm64 desktop               # gives versions
+
+# Simulating what the script will run to peek at folder structure
+aqt install-qt --outputdir ~/Qt linux_arm64 desktop 6.7.0 linux_gcc_arm64 -m qtwebsockets
+#+end_src
+
+The scripts downloads =QT= into =~/Qt=, you can delete it after building since the script copies what it needs to webots home directory.
+
+Adaptations were made to the script since =arm64= version of QT changes =gcc_64= name to =gcc_arm64=.
+
+*** OIS
+The =Linux x86_64= package will mirror structure of:
+- [[https://cyberbotics.com/files/repository/dependencies/linux64/release/libOIS.1.4.tar.bz2][libOIS.1.4.tar.bz2]]
+
+#+begin_src shell
+pwd # <webots_repo>/dependencies
+
+git clone https://github.com/wgois/OIS.git
+cd OIS
+git checkout v1.4
+chmod u+x bootstrap
+./bootstrap
+./configure
+make
+
+# Simulate the structure to compress
+mkdir -p tar/{include/libOIS/OIS,lib/webots}
+cp includes/*h tar/include/libOIS/OIS/
+cp -d src/.libs/*so tar/lib/webots
+
+cd tar
+tar -cvjf libOIS.1.4.tar.bz2 include lib
+mv libOIS.1.4.tar.bz2 ../../              # put it in dependencies
+
+cd ../../
+rm -rf OIS                                # no need to keep the repository anymore
+#+end_src
+
+*** Assimp
+The =Linux x86_64= package will mirror structure of:
+- [[https://cyberbotics.com/files/repository/dependencies/linux64/release/libassimp-5.2.3.tar.bz2][libassimp-5.2.3.tar.bz2]]
+
+#+begin_src shell
+pwd # <webots_repo>/dependencies
+
+git clone https://github.com/assimp/assimp
+cd assimp
+git checkout v5.2.3
+
+# It wouldn't build with -Werror, idk which file was the culprit
+# Later i saw there was a patch on the wiki page, maybe try it if later something fails
+remove "-Werror" from
+- code/CMakeLists.txt
+- contrib/zip/CMakeLists.txt
+
+mkdir build
+cd build
+cmake \
+-DCMAKE_BUILD_TYPE=RELEASE \
+-DASSIMP_BUILD_TESTS=OFF \
+-DASSIMP_NO_EXPORT=ON \
+-DASSIMP_BUILD_COLLADA_IMPORTER=ON \
+-DASSIMP_BUILD_OBJ_IMPORTER=ON \
+-DASSIMP_BUILD_STL_IMPORTER=ON \
+-DASSIMP_BUILD_FBX_IMPORTER=ON \
+-DASSIMP_BUILD_3DS_IMPORTER=OFF \
+-DASSIMP_BUILD_BLEND_IMPORTER=OFF \
+-DASSIMP_BUILD_DXF_IMPORTER=OFF \
+-DASSIMP_BUILD_BVH_IMPORTER=OFF \
+-DASSIMP_BUILD_OGRE_IMPORTER=OFF \
+-DASSIMP_BUILD_X3D_IMPORTER=OFF \
+-DASSIMP_BUILD_AMF_IMPORTER=OFF \
+-DASSIMP_BUILD_AC_IMPORTER=OFF \
+-DASSIMP_BUILD_ASE_IMPORTER=OFF \
+-DASSIMP_BUILD_ASSBIN_IMPORTER=OFF \
+-DASSIMP_BUILD_B3D_IMPORTER=OFF \
+-DASSIMP_BUILD_CSM_IMPORTER=OFF \
+-DASSIMP_BUILD_HMP_IMPORTER=OFF \
+-DASSIMP_BUILD_IRRMESH_IMPORTER=OFF \
+-DASSIMP_BUILD_IRR_IMPORTER=OFF \
+-DASSIMP_BUILD_LWO_IMPORTER=OFF \
+-DASSIMP_BUILD_LWS_IMPORTER=OFF \
+-DASSIMP_BUILD_MD2_IMPORTER=OFF \
+-DASSIMP_BUILD_MD3_IMPORTER=OFF \
+-DASSIMP_BUILD_MD5_IMPORTER=OFF \
+-DASSIMP_BUILD_MDC_IMPORTER=OFF \
+-DASSIMP_BUILD_MDL_IMPORTER=OFF \
+-DASSIMP_BUILD_NFF_IMPORTER=OFF \
+-DASSIMP_BUILD_NDO_IMPORTER=OFF \
+-DASSIMP_BUILD_OFF_IMPORTER=OFF \
+-DASSIMP_BUILD_OPENGEX_IMPORTER=OFF \
+-DASSIMP_BUILD_PLY_IMPORTER=OFF \
+-DASSIMP_BUILD_MS3D_IMPORTER=OFF \
+-DASSIMP_BUILD_COB_IMPORTER=OFF \
+-DASSIMP_BUILD_IFC_IMPORTER=OFF \
+-DASSIMP_BUILD_XGL_IMPORTER=OFF \
+-DASSIMP_BUILD_Q3D_IMPORTER=OFF \
+-DASSIMP_BUILD_Q3BSP_IMPORTER=OFF \
+-DASSIMP_BUILD_RAW_IMPORTER=OFF \
+-DASSIMP_BUILD_SIB_IMPORTER=OFF \
+-DASSIMP_BUILD_SMD_IMPORTER=OFF \
+-DASSIMP_BUILD_TERRAGEN_IMPORTER=OFF \
+-DASSIMP_BUILD_3D_IMPORTER=OFF \
+-DASSIMP_BUILD_X_IMPORTER=OFF \
+-DASSIMP_BUILD_GLTF_IMPORTER=OFF \
+-DASSIMP_BUILD_3MF_IMPORTER=OFF \
+-DASSIMP_BUILD_MMD_IMPORTER=OFF \
+-DASSIMP_BUILD_MMD_IMPORTER=OFF \
+-DASSIMP_BUILD_ASSIMP_TOOLS=OFF \
+-DASSIMP_BUILD_TESTS=OFF \
+-DASSIMP_BUILD_ZLIB=TRUE \
+-S .. -B .
+
+make -j4 # adapt for your number of cores/threads/load you want
+
+# replicate the structure of the linux x64 version
+mkdir -p tar/{include/libassimp/include/assimp,lib/webots}
+cp -r ../include/assimp/* tar/include/libassimp/include/assimp/
+cp include/assimp/config.h tar/include/libassimp/include/assimp/
+cp -d bin/libassimp.so* tar/lib/webots/         # keep the symbolic links
+cd tar
+tar -cvjSf libassimp-5.2.3.tar.bz2 include lib
+mv libassimp-5.2.3.tar.bz2 ../../../            # put it in dependencies
+
+cd ../../../
+rm -rf assimp/                                  # no need to keep the repository anymore
+#+end_src
+
+*** Pico
+The =Linux x86_64= package will mirror structure of:
+- [[https://cyberbotics.com/files/repository/dependencies/linux64/release/libpico.tar.bz2][libpico.tar.bz2]]
+
+#+begin_src shell
+pwd # <webots_repo>/dependencies
+
+git clone https://github.com/cyberbotics/picotts
+cd picotts
+
+# This is the lastest commit at time of writing
+# Checking it out future proofs this script
+git checkout 470531ab6296a3cb7c83ae5e6ef0db8573b54a8d
+
+cd pico
+nano Makefile # populate it with the makefile below
+make
+
+# replicate the structure of the linux x64 version
+mkdir -p tar/{include/libpico,lib/webots,resources/pico/lang}
+#+end_src
+
+If you were to compile the library as it instructed in it's
+repository (instead of using this custom Makefile) everything would work, but when building webots which is written in C++ a problem arises:
+- the library makes use of ~this~ as variable names which is not a [[https://stackoverflow.com/a/33174232][keyword in C but it is in C++]].
+- So when webots code includes header files from this library it will just error.
+
+Solution, either:
+- you can change every occurence of ~this~ in =lib/*.h= to something else
+- get the =linux x86_64= version and use those header files
+  which by inspection someone has changed: ~this~ → ~that~.
+
+#+begin_src shell
+# So downloading the x86_64 version
+wget 'https://cyberbotics.com/files/repository/dependencies/linux64/release/libpico.tar.bz2'
+mkdir extracted
+tar xf libpico.tar.bz2 -C extracted
+
+cp extracted/include/libpico/*.h tar/include/libpico/
+cp libpico.so tar/lib/webots/
+cp lang/* tar/resources/pico/lang/
+
+cd tar
+tar -cvjSf libpico.tar.bz2 include lib resources
+mv libpico.tar.bz2 ../../../ # put it in dependencies
+
+cd ../../../
+rm -rf picotts/             # no need to keep the repository anymore
+#+end_src
+
+#+begin_src makefile
+CC       = gcc
+CFLAGS   = -fPIC
+CFLAGS  += -Wno-parentheses-equality
+LDFLAGS  = -shared
+
+TARGET  = libpico.so
+# it wasn't recursing, but all .c files are under lib so just force it
+SOURCES = $(wildcard lib/*.c)
+OBJECTS = $(SOURCES:.c=.o)
+
+all: $(TARGET)
+clean:
+# MUST BE TAB INDENTED
+	rm -f *.o $(TARGET)
+
+$(TARGET): $(OBJECTS)
+# MUST BE TAB INDENTED
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS) $(LDFLAGS)
+#+end_src
+
+* Build webots
+
+#+begin_src shell
+pwd # <webots_repo>/
+
+make -j4 # adapt for your number of cores/threads/load you want
+#+end_src
+
+* Troubleshooting
+** Missing ~libbz2.so.1.0~
+Originally i took note of an error somewhere in =QT= download experimentation.
+Which complained about a missing =dynamic library=, I symlinked it.
+
+After cleaning up and tracing the steps the error could not be reproduced.
+Anyways I'll record it here.
+
+#+begin_src shell
+dnf repoquery -l bzip2-libs #  gives fedora's library location
+
+cd /usr/lib64/
+ln -s libbz2.so.1.0.8 libbz2.so.1.0
+#+end_src
+

@@ -52,11 +52,8 @@ endif
 
 # determine the OSARCH and UBUNTU_VERSION (linux only)
 ifeq ($(OSTYPE),linux)
-  ifeq ($(filter x86_64, $(shell uname -a)),)
-    OSARCH = i386
-  else
-    OSARCH = x86_64
-  endif
+  OSARCH = $(shell uname -m)
+
   ifeq ($(OSTYPE),linux)
     ifeq ($(SNAP_NAME), webots)
       UBUNTU_VERSION=22.04

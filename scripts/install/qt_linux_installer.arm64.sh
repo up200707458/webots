@@ -3,10 +3,10 @@
 # exit when any command fails
 set -e
 
-QT_VERSION=6.5.3
+QT_VERSION=6.7.0
 pip install --no-input aqtinstall
-aqt install-qt --outputdir ~/Qt linux desktop ${QT_VERSION} gcc_64 -m qtwebsockets
-QT_INSTALLATION_PATH=~/Qt/${QT_VERSION}/gcc_64
+aqt install-qt --outputdir ~/Qt linux_arm64 desktop ${QT_VERSION} linux_gcc_arm64 -m qtwebsockets
+QT_INSTALLATION_PATH=~/Qt/${QT_VERSION}/gcc_arm64
 QT_INSTALLATION_BIN_PATH=${QT_INSTALLATION_PATH}/bin
 QT_INSTALLATION_LIBEXEC_PATH=${QT_INSTALLATION_PATH}/libexec
 QT_INSTALLATION_LIB_PATH=${QT_INSTALLATION_PATH}/lib
@@ -113,8 +113,9 @@ cp -a $QT_INSTALLATION_TRANSLATIONS_PATH/qtbase_*                   lib/webots/q
 cp -a $QT_INSTALLATION_TRANSLATIONS_PATH/qtdeclarative_*            lib/webots/qt/translations/
 cp -a $QT_INSTALLATION_TRANSLATIONS_PATH/qtwebsockets_*             lib/webots/qt/translations/
 
-ARCHIVE=dependencies/webots-qt-$QT_VERSION-linux64-release.tar.bz2
+ARCHIVE=dependencies/webots-qt-$QT_VERSION-linuxarm64-release.tar.bz2
 echo Compressing $ARCHIVE \(please wait\)
 tar cjf $ARCHIVE lib/webots/libQt6* lib/webots/libicu* lib/webots/qt include/qt bin/qt/lrelease bin/qt/lupdate bin/qt/moc
 
+rm -rf ~/Qt
 echo Done.

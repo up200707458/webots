@@ -1,3 +1,8 @@
+# Building Webots on Linux ARM64
+
+See [Build instruction for ARM64](README_ARM64.org).
+
+
 # Webots: open-source robot simulator
 
 [![Webots](https://img.shields.io/github/v/release/cyberbotics/webots)](https://github.com/cyberbotics/webots/releases/latest)

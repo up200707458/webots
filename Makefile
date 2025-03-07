@@ -128,7 +128,11 @@ ifeq ($(OSTYPE),darwin)
 	@+make --silent -C dependencies -f Makefile.mac $(MAKECMDGOALS)
 endif
 ifeq ($(OSTYPE),linux)
+  ifeq ($(OSARCH),x86_64)
 	@+make --silent -C dependencies -f Makefile.linux $(MAKECMDGOALS)
+  else
+	@+make --silent -C dependencies -f Makefile.linux.arm64 $(MAKECMDGOALS)
+  endif
 endif
 ifeq ($(OSTYPE),windows)
 	@+make --silent -C dependencies -f Makefile.windows $(MAKECMDGOALS)
