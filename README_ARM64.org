@@ -27,7 +27,7 @@ git submodule update
 * Install packaged dependencies
 Listed on:
 - =scripts/install/linux_compilation_dependencies.sh= (which calls the runtime one)
-- =scripts/install/linux_compilation_dependencies.sh=
+- =scripts/install/linux_runtime_dependencies.sh=
 - dependencies for the @compile time downloaded libraries, discovered mostly ad hoc.
 
 If running on =ubuntu= you might be able to run =scripts/install/linux_compilation_dependencies.sh=,
