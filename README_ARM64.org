@@ -32,7 +32,7 @@ Listed on:
 
 If running on =ubuntu= you might be able to run =scripts/install/linux_compilation_dependencies.sh=,
 for fedora 41 manual searching for the packages was done.
-Since the installation was not on a chainroot some package might have been missed while
+Since the installation was not on a ~chroot~ some package might have been missed while
 still working because it would have been already on the system.
 
 In case a later step fails you might cross check with:

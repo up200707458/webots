@@ -1,4 +1,3 @@
-
 #####################################################################################################
 # Uncomment / edit the following environment variables when the corresponding software is installed #
 #####################################################################################################
@@ -17,3 +16,4 @@ export WEBOTS_ALLOW_MODIFY_INSTALLATION=1                 # If defined, you are 
 #########################################################################
 
 export WEBOTS_HOME=$HOME/dev/webots  # Defines the path to Webots home.
+export PATH=$HOME/.local/bin:$PATH   # aqt (QT downloader) is installed locally, some people might not have this in their PATH
